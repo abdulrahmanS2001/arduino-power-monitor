@@ -79,6 +79,56 @@ const powerChart = new Chart(chartCtx, {
     }
 });
 
+// Connect to the WebSocket server
+const ws = new WebSocket('wss://energy-monitor-19xr.onrender.com');
+
+ws.onopen = () => {
+    statusIndicator.classList.remove('inactive');
+    statusIndicator.classList.add('active');
+    statusText.textContent = 'Arduino Status: Connected';
+};
+
+ws.onclose = () => {
+    statusIndicator.classList.remove('active');
+    statusIndicator.classList.add('inactive');
+    statusText.textContent = 'Arduino Status: Disconnected';
+};
+
+ws.onerror = (err) => {
+    console.error('WebSocket error:', err);
+};
+
+ws.onmessage = (event) => {
+    try {
+        const data = JSON.parse(event.data);
+        if (typeof data.power !== 'undefined') {
+            // Update power reading
+            powerValue.textContent = formatPower(data.power);
+
+            // Update total power
+            totalPowerKWh += calculateEnergy(data.power);
+            totalPowerValue.textContent = formatTotalPower(totalPowerKWh);
+
+            // Update chart
+            const now = new Date();
+            const timeLabel = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+            powerData.labels.push(timeLabel);
+            powerData.values.push(data.power);
+
+            // Keep only last 30 readings
+            if (powerData.labels.length > 30) {
+                powerData.labels.shift();
+                powerData.values.shift();
+            }
+
+            powerChart.update();
+        }
+    } catch (error) {
+        console.error('Error parsing WebSocket data:', error);
+    }
+};
+
 // Update clock function
 function updateClock() {
     const now = new Date();
@@ -112,55 +162,10 @@ function calculateEnergy(power) {
     return (power / 1000) * timeDiff; // Convert W to kW and multiply by hours
 }
 
-// Check Arduino status and update readings
-async function updateArduinoData() {
-    try {
-        // Fetch Arduino data
-        const response = await fetch('/arduino-data');
-        const result = await response.json();
-        
-        if (result.data) {
-            // Update status indicator
-            statusIndicator.classList.remove('inactive');
-            statusIndicator.classList.add('active');
-            statusText.textContent = 'Arduino Status: Connected';
-            
-            // Update power reading
-            const power = result.data.power;
-            powerValue.textContent = formatPower(power);
-            
-            // Update total power
-            totalPowerKWh += calculateEnergy(power);
-            totalPowerValue.textContent = formatTotalPower(totalPowerKWh);
-            
-            // Update chart
-            const now = new Date();
-            const timeLabel = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-            
-            powerData.labels.push(timeLabel);
-            powerData.values.push(power);
-            
-            // Keep only last 30 readings
-            if (powerData.labels.length > 30) {
-                powerData.labels.shift();
-                powerData.values.shift();
-            }
-            
-            // Update chart
-            powerChart.update();
-        }
-    } catch (error) {
-        console.error('Error fetching Arduino data:', error);
-        statusIndicator.classList.remove('active');
-        statusIndicator.classList.add('inactive');
-        statusText.textContent = 'Arduino Status: Disconnected';
-    }
-}
-
 // Initial calls
 updateClock();
-updateArduinoData();
+// updateArduinoData();
 
 // Set up intervals
 setInterval(updateClock, 1000);  // Update clock every second
-setInterval(updateArduinoData, 1000);  // Update Arduino data every second 
+// setInterval(updateArduinoData, 1000);  // Update Arduino data every second 
