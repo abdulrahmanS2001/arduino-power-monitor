@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: arduino-power-monitor
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ARDUINO_PORT
+        value: COM3
+      - key: ARDUINO_BAUDRATE
+        value: "9600"
+    healthCheckPath: /
+    autoDeploy: true 

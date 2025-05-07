@@ -1,0 +1,21 @@
+{
+  "name": "arduino-power-monitor",
+  "version": "1.0.0",
+  "description": "Real-time Arduino power monitoring dashboard",
+  "main": "bridge.js",
+  "scripts": {
+    "start": "node bridge.js",
+    "local": "node local-bridge.js",
+    "test": "node test-connection.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "serialport": "^10.5.0",
+    "@serialport/parser-readline": "^10.5.0",
+    "ws": "^8.16.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
